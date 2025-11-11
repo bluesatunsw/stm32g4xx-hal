@@ -136,6 +136,17 @@ pub trait SerialExt<USART, Config> {
         RX: RxPin<USART>;
 }
 
+pub trait TxExt<USART, Config> {
+    fn usart_txonly<TX>(
+        self,
+        tx: TX,
+        config: Config,
+        rcc: &mut Rcc,
+    ) -> Result<Tx<USART, TX, NoDMA>, InvalidConfig>
+    where
+        TX: TxPin<USART>;
+}
+
 impl<USART, TX, RX> fmt::Write for Serial<USART, TX, RX>
 where
     Self: embedded_hal_old::serial::Write<u8>,
@@ -687,6 +698,114 @@ macro_rules! uart_full {
                 RX: RxPin<$USARTX>,
             {
                 Serial::$usartX(self, tx, rx, config, rcc)
+            }
+        }
+
+        impl TxExt<$USARTX, FullConfig> for $USARTX {
+            fn usart_txonly<TX>(
+                self,
+                tx: TX,
+                config: FullConfig,
+                rcc: &mut Rcc,
+            ) -> Result<Tx<$USARTX, TX, NoDMA>, InvalidConfig>
+            where
+                TX: TxPin<$USARTX>,
+            {
+                Tx::$usartX(self, tx, config, rcc)
+            }
+        }
+
+        impl<TX> Tx<$USARTX, TX, NoDMA>
+        where
+            TX: TxPin<$USARTX>,
+        {
+            pub fn $usartX(
+                usart: $USARTX,
+                tx: TX,
+                // NOTE: right now we just ignore/don't set the options that don't apply if only Tx is
+                // enabled. but ideally we'd have a more elegant approach...?
+                config: FullConfig,
+                rcc: &mut Rcc,
+            ) -> Result<Self, InvalidConfig> {
+                // Enable clock for USART
+                $USARTX::enable(rcc);
+                $USARTX::reset(rcc);
+
+                // TODO: By default, all UARTs are clocked from PCLK. We could modify RCC_CCIPR to
+                // try SYSCLK if PCLK is not high enough. We could also select 8x oversampling
+                // instead of 16x.
+
+                let clk = <$USARTX as RccBus>::Bus::get_frequency(&rcc.clocks).raw() as u64;
+                let bdr = config.baudrate.0 as u64;
+                let clk_mul = 1;
+                let div = (clk_mul * clk) / bdr;
+                if div < 16 {
+                    // We need 16x oversampling.
+                    return Err(InvalidConfig);
+                }
+                usart.brr().write(|w| unsafe { w.bits(div as u32) });
+
+                // Reset the UART and disable it (UE=0)
+                usart.cr1().reset();
+                usart.cr2().reset();
+                usart.cr3().reset();
+
+                usart.cr2().write(|w| unsafe {
+                    w.stop()
+                        .bits(config.stopbits.bits())
+                        .swap()
+                        .bit(config.swap)
+                        .txinv()
+                        .bit(config.tx_invert)
+                        //.rxinv()
+                        //.bit(config.rx_invert)
+                });
+
+                // RX-only feature
+                /*if let Some(timeout) = config.receiver_timeout {
+                    usart.cr1().write(|w| w.rtoie().set_bit());
+                    usart.cr2().modify(|_, w| w.rtoen().set_bit());
+                    usart.rtor().write(|w| unsafe { w.rto().bits(timeout) });
+                }*/
+
+                usart.cr3().write(|w| unsafe {
+                    w.txftcfg()
+                        .bits(config.tx_fifo_threshold.bits())
+                        /*.rxftcfg()
+                        .bits(config.rx_fifo_threshold.bits())*/
+                        .txftie()
+                        .bit(config.tx_fifo_interrupt)
+                        /*.rxftie()
+                        .bit(config.rx_fifo_interrupt)*/
+                });
+
+                // Enable the UART and perform remaining configuration.
+                usart.cr1().modify(|_, w| {
+                    w.ue()
+                        .set_bit()
+                        .te()
+                        .set_bit()
+                        /*.re()
+                        .set_bit()*/
+                        .m0()
+                        .bit(config.wordlength == WordLength::DataBits7)
+                        .m1()
+                        .bit(config.wordlength == WordLength::DataBits9)
+                        .pce()
+                        .bit(config.parity != Parity::ParityNone)
+                        .ps()
+                        .bit(config.parity == Parity::ParityOdd)
+                        .fifoen()
+                        .bit(config.fifo_enable)
+                });
+
+                Ok(
+                    Tx {
+                        pin: tx,
+                        usart,
+                        _dma: PhantomData,
+                    }
+                )
             }
         }
 
