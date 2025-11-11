@@ -34,6 +34,7 @@ pub use crate::rcc::RccExt as _;
 // pub use crate::rng::RngCore as _;
 // pub use crate::rng::RngExt as _;
 pub use crate::serial::SerialExt as _;
+pub use crate::serial::TxExt as _;
 pub use crate::spi::SpiExt as _;
 pub use crate::time::U32Ext as _;
 // pub use crate::timer::opm::OpmExt as _;
