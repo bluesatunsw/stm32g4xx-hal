@@ -81,6 +81,7 @@ pub mod opamp;
 pub mod prelude;
 pub mod pwm;
 pub mod pwr;
+pub mod quadspi;
 // pub mod qei;
 pub mod rcc;
 // pub mod rng;
