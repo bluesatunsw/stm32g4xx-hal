@@ -85,6 +85,9 @@ impl QuadSpiExt for QUADSPI {
         QUADSPI::enable(rcc);
         QUADSPI::reset(rcc);
 
+        // Disable during configuration and re-enable afterwards
+        self.cr().modify(|_, w| w.en().clear_bit());
+
         self.cr().write(|w| unsafe {
             w
                 .fthres().bits(fifo_threshold - 1)
@@ -100,6 +103,8 @@ impl QuadSpiExt for QUADSPI {
                 .csht().set(chip_select_high_time)
                 .ckmode().bit(clock_mode == ClockMode::Mode3)
         });
+
+        self.cr().modify(|_, w| w.en().set_bit());
 
         Qspi { inst: self }
     }
