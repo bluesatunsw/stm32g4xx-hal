@@ -1,4 +1,5 @@
 use crate::gpio::{self, AF10};
+use crate::rcc::{Enable, Rcc, Reset};
 use crate::stm32::QUADSPI;
 
 pub trait Pins {}
@@ -41,9 +42,10 @@ pub struct Qspi {
 }
 
 #[derive(PartialEq)]
-pub enum FlashId {
+pub enum FlashMode {
     Flash1,
     Flash2,
+    Dual,
 }
 
 #[derive(PartialEq)]
@@ -56,14 +58,14 @@ pub trait QuadSpiExt {
     fn qspi<PINS>(
         self,
         pins: PINS,
+        rcc: &mut Rcc,
         clock_prescalar: u8,
         fifo_threshold: u8,
         sample_shifting: bool,
         flash_size: u8,
         chip_select_high_time: u8,
         clock_mode: ClockMode,
-        flash_id: FlashId,
-        dual_flash: bool
+        flash_mode: FlashMode,
     ) -> Qspi;
 }
 
@@ -71,22 +73,25 @@ impl QuadSpiExt for QUADSPI {
     fn qspi<PINS>(
         self,
         _pins: PINS,
+        rcc: &mut Rcc,
         clock_prescalar: u8,
         fifo_threshold: u8,
         sample_shifting: bool,
         flash_size: u8,
         chip_select_high_time: u8,
         clock_mode: ClockMode,
-        flash_id: FlashId,
-        dual_flash: bool
+        flash_mode: FlashMode,
     ) -> Qspi {
+        QUADSPI::enable(rcc);
+        QUADSPI::reset(rcc);
+
         self.cr().write(|w| unsafe {
             w
                 .fthres().bits(fifo_threshold - 1)
                 .prescaler().set(clock_prescalar)
                 .sshift().bit(sample_shifting)
-                .fsel().bit(flash_id == FlashId::Flash2)
-                .dfm().bit(dual_flash)
+                .fsel().bit(flash_mode == FlashMode::Flash2)
+                .dfm().bit(flash_mode == FlashMode::Dual)
         });
 
         self.dcr().write(|w| {
