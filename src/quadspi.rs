@@ -1,3 +1,4 @@
+use crate::adc::Disabled;
 use crate::gpio::{self, AF10};
 use crate::rcc::{Enable, Rcc, Reset};
 use crate::stm32::QUADSPI;
@@ -118,7 +119,7 @@ pub enum LineMode {
 }
 
 #[derive(Clone, Copy)]
-pub struct CommandInstruction {
+struct CommandInstruction {
     pub mode: LineMode,
     pub data: u8,
 }
@@ -142,8 +143,32 @@ impl CommandArgumentData {
     }
 }
 
+impl From<[u8; 1]> for CommandArgumentData {
+    fn from(value: [u8; 1]) -> Self {
+        Self::OneByte(value)
+    }
+}
+
+impl From<[u8; 2]> for CommandArgumentData {
+    fn from(value: [u8; 2]) -> Self {
+        Self::TwoBytes(value)
+    }
+}
+
+impl From<[u8; 3]> for CommandArgumentData {
+    fn from(value: [u8; 3]) -> Self {
+        Self::ThreeBytes(value)
+    }
+}
+
+impl From<[u8; 4]> for CommandArgumentData {
+    fn from(value: [u8; 4]) -> Self {
+        Self::FourBytes(value)
+    }
+}
+
 #[derive(Clone, Copy)]
-pub struct CommandArgument {
+struct CommandArgument {
     pub mode: LineMode,
     pub data: CommandArgumentData,
 }
@@ -156,23 +181,111 @@ pub enum DdrMode {
 }
 
 pub struct Command {
-    pub ddr_mode: DdrMode,
+    ddr_mode: DdrMode,
     
-    pub instruction: Option<CommandInstruction>,
-    pub address: Option<CommandArgument>,
-    pub alternate_bytes: Option<CommandArgument>,
+    instruction: Option<CommandInstruction>,
+    address: Option<CommandArgument>,
+    alternate_bytes: Option<CommandArgument>,
+}
+
+impl Command {
+    pub fn new(ddr_mode: DdrMode) -> Self {
+        Self {
+            ddr_mode: ddr_mode,
+
+            instruction: None,
+            address: None,
+            alternate_bytes: None,
+        }
+    }
+
+    pub fn with_instruction(mut self, line_mode: LineMode, instruction: u8) -> Self {
+        self.instruction = Some(CommandInstruction {
+            mode: line_mode, data: instruction
+        });
+        self   
+    }
+
+    pub fn with_address<T>(mut self, line_mode: LineMode, adddress: T) -> Self
+        where T: Into<CommandArgumentData>
+    {
+        self.address = Some(CommandArgument {
+            mode: line_mode, data: adddress.into()
+        });
+        self   
+    }
+
+    pub fn with_alternate_bytes<T>(mut self, line_mode: LineMode, alternate_bytes: T) -> Self
+        where T: Into<CommandArgumentData>
+    {
+        self.alternate_bytes = Some(CommandArgument {
+            mode: line_mode, data: alternate_bytes.into()
+        });
+        self   
+    }
 }
 
 pub struct IoCommand {
-    pub ddr_mode: DdrMode,
-    pub send_instruction_once: bool,
+    ddr_mode: DdrMode,
+    send_instruction_once: bool,
 
-    pub instruction: Option<CommandInstruction>,
-    pub address: Option<CommandArgument>,
-    pub alternate_bytes: Option<CommandArgument>,
+    instruction: Option<CommandInstruction>,
+    address: Option<CommandArgument>,
+    alternate_bytes: Option<CommandArgument>,
 
-    pub dummy_cycles: u8,
-    pub data_mode: LineMode,
+    dummy_cycles: u8,
+    data_mode: LineMode,
+}
+
+impl IoCommand {
+    pub fn new(ddr_mode: DdrMode, line_mode: LineMode) -> Self {
+        Self {
+            ddr_mode: ddr_mode,
+            send_instruction_once: false,
+
+            instruction: None,
+            address: None,
+            alternate_bytes: None,
+
+            dummy_cycles: 0,
+            data_mode: line_mode,
+        }
+    }
+
+    pub fn with_send_instruction_once(mut self) -> Self {
+        self.send_instruction_once = true;
+        self
+    }
+
+    pub fn with_instruction(mut self, line_mode: LineMode, instruction: u8) -> Self {
+        self.instruction = Some(CommandInstruction {
+            mode: line_mode, data: instruction
+        });
+        self   
+    }
+
+    pub fn with_address<T>(mut self, line_mode: LineMode, adddress: T) -> Self
+        where T: Into<CommandArgumentData>
+    {
+        self.address = Some(CommandArgument {
+            mode: line_mode, data: adddress.into()
+        });
+        self   
+    }
+
+    pub fn with_alternate_bytes<T>(mut self, line_mode: LineMode, alternate_bytes: T) -> Self
+        where T: Into<CommandArgumentData>
+    {
+        self.alternate_bytes = Some(CommandArgument {
+            mode: line_mode, data: alternate_bytes.into()
+        });
+        self   
+    }
+
+    pub fn with_dummy_cycles(mut self, dummy_cycles: u8) -> Self {
+        self.dummy_cycles = dummy_cycles;
+        self
+    }
 }
 
 enum FunctionalMode {
