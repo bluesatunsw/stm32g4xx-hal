@@ -1,4 +1,3 @@
-use crate::adc::Disabled;
 use crate::gpio::{self, AF10};
 use crate::rcc::{Enable, Rcc, Reset};
 use crate::stm32::QUADSPI;
@@ -312,12 +311,12 @@ impl Qspi {
         // - AR: if DR is not required; or
         // - DR: otherwise.
 
-        inst.abr().write(|w| unsafe {
-            match alternate_bytes {
-                Some(altb) => w.bits(altb.data.to_u32()),
-                None => w.set(0),
-            }
-        });
+        match alternate_bytes {
+            Some(altb) => {
+                inst.abr().write(|w| unsafe { w.bits(altb.data.to_u32()) });
+            },
+            None => {},
+        };
 
         inst.ccr().write(|w| {
             match instruction {
@@ -390,12 +389,12 @@ impl Qspi {
                 .ddrm().bit(ddr_mode != DdrMode::Disabled)
         });
 
-        inst.ar().write(|w| unsafe {
-            match address {
-                Some(addr) => w.bits(addr.data.to_u32()),
-                None => w,
-            }
-        });
+        match address {
+            Some(addr) => {
+                inst.ar().write(|w| unsafe { w.bits(addr.data.to_u32()) });
+            },
+            None => {},
+        }
     }
 
     fn wait_not_busy(&self) {
@@ -438,9 +437,6 @@ impl Qspi {
         );
 
         for i in 0..data.len() {
-            let sr = self.inst.sr();
-            while sr.read().ftf().is_not_reached() && sr.read().tcf().is_not_complete() {}
-
             data[i] = self.inst.dr8().read().bits();
         }
     }
@@ -463,8 +459,6 @@ impl Qspi {
         );
 
         for i in 0..data.len() {
-            while self.inst.sr().read().ftf().is_not_reached() {}
-
             self.inst.dr8().write(|w| w.set(data[i]));
         }
 
