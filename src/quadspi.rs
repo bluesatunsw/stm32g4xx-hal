@@ -480,6 +480,10 @@ impl Qspi {
             Some(command.data_mode)
         );
     }
+
+    pub fn abort(&mut self) {
+        self.inst.cr().modify(|_, w| w.abort().abort_requested());
+    }
 }
 
 impl PinIo0Bank1 for gpio::PA3<AF10> {}

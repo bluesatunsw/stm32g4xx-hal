@@ -27,7 +27,8 @@ version = "0.7.7"
 features = ["critical-section-single-core"]
 
 [dependencies.fdcan]
-version = "0.2.1"
+git = "https://github.com/umi-eng/fdcan.git"
+branch = "transceiver-delay-compensation"
 features = ["fdcan_g0_g4_l5"]
 optional = true
 

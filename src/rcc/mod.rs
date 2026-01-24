@@ -530,12 +530,6 @@ pub trait RccExt {
 
     /// Constrains the `RCC` peripheral and apply clock configuration
     fn freeze(self, rcc_cfg: Config, pwr_config: PowerConfiguration) -> Rcc;
-
-    /// Assume that the `RCC` peripheral has been constrained in a way we are not
-    /// aware of and assert that it has a particular clock configuration
-    /// 
-    /// SAFETY: the RCC must have been externally configured to yield these clocks
-    unsafe fn exnihilate(self, clocks: Clocks) -> Rcc;
 }
 
 impl RccExt for RCC {
@@ -548,13 +542,6 @@ impl RccExt for RCC {
 
     fn freeze(self, rcc_cfg: Config, pwr_config: PowerConfiguration) -> Rcc {
         self.constrain().freeze(rcc_cfg, pwr_config)
-    }
-
-    unsafe fn exnihilate(self, clocks: Clocks) -> Rcc {
-        Rcc {
-            rb: self,
-            clocks: clocks,
-        }
     }
 }
 
