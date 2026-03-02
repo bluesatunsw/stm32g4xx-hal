@@ -298,10 +298,9 @@ impl<const SECTOR_SZ_KB: u32> FlashWriter<'_, SECTOR_SZ_KB> {
                     | ((data[idx + 7] as u32) << 24);
             }
 
+            while self.flash.sr.sr().read().bsy().bit_is_set() {}
             // Set Page Programming to 1
             self.flash.cr.cr().modify(|_, w| w.pg().set_bit());
-
-            while self.flash.sr.sr().read().bsy().bit_is_set() {}
 
             // NOTE(unsafe) Write to FLASH area with no side effects
             unsafe { core::ptr::write_volatile(write_address1, word1) };
@@ -310,6 +309,7 @@ impl<const SECTOR_SZ_KB: u32> FlashWriter<'_, SECTOR_SZ_KB> {
             // Wait for write
             while self.flash.sr.sr().read().bsy().bit_is_set() {}
 
+            self.flash.sr.sr().modify(|_, w| w.eop().clear_bit());
             // Set Page Programming to 0
             self.flash.cr.cr().modify(|_, w| w.pg().clear_bit());
 

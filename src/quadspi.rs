@@ -136,7 +136,7 @@ impl CommandArgumentData {
         match self {
             CommandArgumentData::OneByte(x) => x[0] as u32,
             CommandArgumentData::TwoBytes(x) => u16::from_le_bytes(*x) as u32,
-            CommandArgumentData::ThreeBytes(x) => u32::from_le_bytes([0, x[0], x[1], x[2]]),
+            CommandArgumentData::ThreeBytes(x) => u32::from_le_bytes([x[0], x[1], x[2], 0]),
             CommandArgumentData::FourBytes(x) => u32::from_le_bytes(*x),
         }
     }
