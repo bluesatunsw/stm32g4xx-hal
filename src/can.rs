@@ -61,7 +61,7 @@ macro_rules! pins {
 }
 
 mod fdcan1 {
-    use super::{Rx, Tx, Can, CanExt};
+    use super::{Can, CanExt, Rx, Tx};
     use crate::gpio::{AF9, PA11, PA12, PB8, PB9, PD0, PD1};
     use crate::stm32::FDCAN1;
     use fdcan;
@@ -109,7 +109,7 @@ mod fdcan1 {
     feature = "stm32g4a1",
 ))]
 mod fdcan2 {
-    use super::{Rx, Tx, Can, CanExt};
+    use super::{Can, CanExt, Rx, Tx};
     use crate::gpio::{AF9, PB12, PB13, PB5, PB6};
     use crate::stm32::FDCAN2;
     use fdcan;
@@ -152,7 +152,7 @@ mod fdcan2 {
     feature = "stm32g484",
 ))]
 mod fdcan3 {
-    use super::{Rx, Tx, Can, CanExt};
+    use super::{Can, CanExt, Rx, Tx};
     use crate::gpio::{AF11, PA15, PA8, PB3, PB4};
     use crate::stm32::FDCAN3;
     use fdcan;

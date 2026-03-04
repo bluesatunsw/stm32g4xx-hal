@@ -757,8 +757,8 @@ macro_rules! uart_full {
                         .bit(config.swap)
                         .txinv()
                         .bit(config.tx_invert)
-                        //.rxinv()
-                        //.bit(config.rx_invert)
+                    //.rxinv()
+                    //.bit(config.rx_invert)
                 });
 
                 // RX-only feature
@@ -775,8 +775,8 @@ macro_rules! uart_full {
                         .bits(config.rx_fifo_threshold.bits())*/
                         .txftie()
                         .bit(config.tx_fifo_interrupt)
-                        /*.rxftie()
-                        .bit(config.rx_fifo_interrupt)*/
+                    /*.rxftie()
+                    .bit(config.rx_fifo_interrupt)*/
                 });
 
                 // Enable the UART and perform remaining configuration.
@@ -799,13 +799,11 @@ macro_rules! uart_full {
                         .bit(config.fifo_enable)
                 });
 
-                Ok(
-                    Tx {
-                        pin: tx,
-                        usart,
-                        _dma: PhantomData,
-                    }
-                )
+                Ok(Tx {
+                    pin: tx,
+                    usart,
+                    _dma: PhantomData,
+                })
             }
         }
 

@@ -266,6 +266,23 @@ impl<const SECTOR_SZ_KB: u32> FlashWriter<'_, SECTOR_SZ_KB> {
         // Unlock Flash
         self.unlock()?;
 
+        while self.flash.sr.sr().read().bsy().bit_is_set() {}
+        // Clear all error flags
+        self.flash.sr.sr().modify(|_, w| {
+            w.progerr()
+                .clear_bit()
+                .sizerr()
+                .clear_bit()
+                .pgaerr()
+                .clear_bit()
+                .pgserr()
+                .clear_bit()
+                .miserr()
+                .clear_bit()
+                .wrperr()
+                .clear_bit()
+        });
+
         // According to RM0440 Rev 7, "It is only possible to program double word (2 x 32-bit data)"
         for idx in (0..data.len()).step_by(8) {
             // Check the starting address
