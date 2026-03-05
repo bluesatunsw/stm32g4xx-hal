@@ -2,7 +2,7 @@
 
 use crate::stm32::{flash, FLASH};
 
-use core::convert::TryInto;
+use core::{convert::TryInto, hint::black_box};
 
 pub const FLASH_START: u32 = 0x0800_0000;
 pub const FLASH_END: u32 = 0x080F_FFFF;
@@ -162,10 +162,15 @@ impl<const SECTOR_SZ_KB: u32> FlashWriter<'_, SECTOR_SZ_KB> {
         // Unlock Flash
         self.unlock()?;
 
+        let bank_len = self.flash_sz.kbytes() * 512;
         // Set Page Erase
-        self.flash.cr.cr().modify(|_, w| w.per().set_bit());
-
-        let page = start_offset / SECTOR_SZ_KB;
+        let page = if start_offset < bank_len {
+            self.flash.cr.cr().modify(|_, w| w.per().set_bit().bker().bank1());
+            start_offset / SECTOR_SZ_KB
+        } else {
+            self.flash.cr.cr().modify(|_, w| w.per().set_bit().bker().bank2());
+            (start_offset - bank_len) / SECTOR_SZ_KB
+        };
 
         // Write address bits
         // NOTE(unsafe) This sets the page address in the Address Register.
@@ -265,23 +270,6 @@ impl<const SECTOR_SZ_KB: u32> FlashWriter<'_, SECTOR_SZ_KB> {
 
         // Unlock Flash
         self.unlock()?;
-
-        while self.flash.sr.sr().read().bsy().bit_is_set() {}
-        // Clear all error flags
-        self.flash.sr.sr().modify(|_, w| {
-            w.progerr()
-                .clear_bit()
-                .sizerr()
-                .clear_bit()
-                .pgaerr()
-                .clear_bit()
-                .pgserr()
-                .clear_bit()
-                .miserr()
-                .clear_bit()
-                .wrperr()
-                .clear_bit()
-        });
 
         // According to RM0440 Rev 7, "It is only possible to program double word (2 x 32-bit data)"
         for idx in (0..data.len()).step_by(8) {

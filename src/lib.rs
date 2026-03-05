@@ -1,5 +1,6 @@
 #![no_std]
 #![allow(non_camel_case_types)]
+#![feature(breakpoint)]
 
 #[cfg(not(any(
     feature = "stm32g431",
