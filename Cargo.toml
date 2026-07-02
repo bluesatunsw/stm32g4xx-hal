@@ -1,15 +1,14 @@
 [package]
-authors = ["Vitaly Domnikov <oss@vitaly.codes>"]
+authors = ["Vitaly Domnikov <oss@vitaly.codes>", "Bluesat UNSW"]
 categories = ["embedded", "hardware-support", "no-std"]
 description = "Peripheral access API for STM32G4 series microcontrollers"
-documentation = "https://docs.rs/stm32g4xx-hal"
 edition = "2021"
 keywords = ["arm", "cortex-m", "stm32g4xx", "hal"]
 license = "MIT/Apache-2.0"
 name = "stm32g4xx-hal"
 readme = "README.md"
-repository = "https://github.com/stm32-rs/stm32g4xx-hal"
-version = "0.0.2"
+repository = "https://github.com/bluesatunsw/stm32g4xx-hal"
+version = "0.0.3"
 
 [dependencies]
 nb = "1"
@@ -27,7 +26,8 @@ version = "0.7.7"
 features = ["critical-section-single-core"]
 
 [dependencies.fdcan]
-version = "0.2.1"
+version = "0.4.0"
+git = "https://github.com/bluesatunsw/fdcan"
 features = ["fdcan_g0_g4_l5"]
 optional = true
 
