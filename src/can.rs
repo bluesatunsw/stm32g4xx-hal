@@ -3,12 +3,10 @@
 
 use crate::rcc::{self, Rcc};
 
-mod sealed {
-    /// A TX pin configured for CAN communication
-    pub trait Tx<CAN> {}
-    /// An RX pin configured for CAN communication
-    pub trait Rx<CAN> {}
-}
+/// A TX pin configured for CAN communication
+pub trait Tx<CAN> {}
+/// An RX pin configured for CAN communication
+pub trait Rx<CAN> {}
 
 /// Storage type for the CAN controller
 #[derive(Debug)]
@@ -36,8 +34,8 @@ where
         rcc: &mut Rcc,
     ) -> fdcan::FdCan<Can<Self>, fdcan::ConfigMode>
     where
-        TX: sealed::Tx<Self>,
-        RX: sealed::Rx<Self>,
+        TX: Tx<Self>,
+        RX: Rx<Self>,
     {
         Self::enable(rcc);
 
@@ -46,25 +44,24 @@ where
 
     fn fdcan_unchecked(self) -> fdcan::FdCan<Can<Self>, fdcan::ConfigMode>;
 }
-/// Implements sealed::{Tx,Rx} for pins associated with a CAN peripheral
+/// Implements {Tx,Rx} for pins associated with a CAN peripheral
 macro_rules! pins {
     ($PER:ident =>
         (tx: [ $($( #[ $pmetatx:meta ] )* $tx:ident<$txaf:ident>),+ $(,)? ],
          rx: [ $($( #[ $pmetarx:meta ] )* $rx:ident<$rxaf:ident>),+ $(,)? ])) => {
         $(
             $( #[ $pmetatx ] )*
-            impl sealed::Tx<$PER> for $tx<$txaf> {}
+            impl Tx<$PER> for $tx<$txaf> {}
         )+
         $(
             $( #[ $pmetarx ] )*
-            impl sealed::Rx<$PER> for $rx<$rxaf> {}
+            impl Rx<$PER> for $rx<$rxaf> {}
         )+
     };
 }
 
 mod fdcan1 {
-    use super::sealed;
-    use super::{Can, CanExt};
+    use super::{Can, CanExt, Rx, Tx};
     use crate::gpio::{AF9, PA11, PA12, PB8, PB9, PD0, PD1};
     use crate::stm32::FDCAN1;
     use fdcan;
@@ -112,8 +109,7 @@ mod fdcan1 {
     feature = "stm32g4a1",
 ))]
 mod fdcan2 {
-    use super::sealed;
-    use super::{Can, CanExt};
+    use super::{Can, CanExt, Rx, Tx};
     use crate::gpio::{AF9, PB12, PB13, PB5, PB6};
     use crate::stm32::FDCAN2;
     use fdcan;
@@ -156,8 +152,7 @@ mod fdcan2 {
     feature = "stm32g484",
 ))]
 mod fdcan3 {
-    use super::sealed;
-    use super::{Can, CanExt};
+    use super::{Can, CanExt, Rx, Tx};
     use crate::gpio::{AF11, PA15, PA8, PB3, PB4};
     use crate::stm32::FDCAN3;
     use fdcan;
